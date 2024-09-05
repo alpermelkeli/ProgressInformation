@@ -1,10 +1,16 @@
 import customtkinter as ctk
 
 
-class ScrollableLabelButtonFrame(ctk.CTkScrollableFrame):
+class ScrollableLabelButtonFrameAnimation(ctk.CTkScrollableFrame):
     def __init__(self, master, edit_command=None, export_command=None, remove_command=None, **kwargs):
         super().__init__(master, **kwargs)
         self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
+        self.grid_columnconfigure(3, weight=1)
+        self.grid_columnconfigure(4, weight=1)
+        self.grid_columnconfigure(5, weight=1)
+
         self.edit_command = edit_command
         self.export_command = export_command
         self.remove_command = remove_command
@@ -14,15 +20,23 @@ class ScrollableLabelButtonFrame(ctk.CTkScrollableFrame):
         self.export_button_list = []
         self.progress_list = []
         self.remove_button_list = []
-        self.export_status_list = []  # List to hold export status labels
+        self.export_status_list = []
+
+        # Centered header label
+        self.header_label = ctk.CTkLabel(self, text="Animation", font=("Arial", 16, "bold"), padx=5, pady=10)
+        self.header_label.grid(row=0, column=0, columnspan=6, pady=(0, 10), sticky="nsew")
 
     def add_item(self, item_id, item_name, progress=0, exported=False, image=None):
+        # Start items from row 1 to be below the header
+        row_index = len(self.label_list) + 1
+
         label = ctk.CTkLabel(self, text=item_name, image=image, compound="left", padx=5, anchor="w")
         progress_label = ctk.CTkLabel(self, text=f"%{progress:.2f}", padx=5, anchor="w")
         edit_button = ctk.CTkButton(self, text="Düzenle", width=75, height=24)
         export_button = ctk.CTkButton(self, text="Birleştir", width=75, height=24)
         remove_button = ctk.CTkButton(self, text="Sil", width=75, height=24)
-        export_status_label = ctk.CTkLabel(self, text="Not Exported" if not exported else "Exported", text_color="Red" if not exported else "Green", padx=5, anchor="w")
+        export_status_label = ctk.CTkLabel(self, text="Not Exported" if not exported else "Exported",
+                                           text_color="Red" if not exported else "Green", padx=5, anchor="w")
 
         if self.edit_command is not None:
             edit_button.configure(command=lambda: self.edit_command(item_id))
@@ -33,13 +47,13 @@ class ScrollableLabelButtonFrame(ctk.CTkScrollableFrame):
         if self.remove_command is not None:
             remove_button.configure(command=lambda: self.remove_command(item_id))
 
-        # Arrange widgets in the grid
-        label.grid(row=len(self.label_list), column=0, pady=(0, 10), sticky="w")
-        progress_label.grid(row=len(self.progress_list), column=1, pady=(0, 10), padx=5, sticky="w")
-        edit_button.grid(row=len(self.edit_button_list), column=2, pady=(0, 10), padx=5)
-        export_button.grid(row=len(self.export_button_list), column=3, pady=(0, 10), padx=5)
-        remove_button.grid(row=len(self.remove_button_list), column=4, pady=(0, 10), padx=5)
-        export_status_label.grid(row=len(self.export_status_list), column=5, pady=(0, 10), padx=5, sticky="w")
+        # Arrange widgets in the grid starting from row 1
+        label.grid(row=row_index, column=0, pady=(0, 10), sticky="w")
+        progress_label.grid(row=row_index, column=1, pady=(0, 10), padx=5, sticky="w")
+        edit_button.grid(row=row_index, column=2, pady=(0, 10), padx=5)
+        export_button.grid(row=row_index, column=3, pady=(0, 10), padx=5)
+        remove_button.grid(row=row_index, column=4, pady=(0, 10), padx=5)
+        export_status_label.grid(row=row_index, column=5, pady=(0, 10), padx=5, sticky="w")
 
         # Append elements to their respective lists
         self.id_list.append(item_id)
@@ -59,7 +73,8 @@ class ScrollableLabelButtonFrame(ctk.CTkScrollableFrame):
     def update_export_status(self, item_id, exported):
         for current_id, export_status_label in zip(self.id_list, self.export_status_list):
             if current_id == item_id:
-                export_status_label.configure(text="Not Exported" if not exported else "Exported", text_color="Red" if not exported else "Green")
+                export_status_label.configure(text="Not Exported" if not exported else "Exported",
+                                              text_color="Red" if not exported else "Green")
                 return
 
     def remove_item(self, item_id):

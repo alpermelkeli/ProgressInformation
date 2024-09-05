@@ -1,7 +1,7 @@
 # In model/Project.py
 
 class Project:
-    def __init__(self, name, folder_path, total_files, notification_message, payment_link, gpu_count, file_url="", price = "0"):
+    def __init__(self, name, folder_path, total_files,notification_message, payment_link, gpu_count,  price = "0", project_type= "Animation"):
         self.id = id(self)  # Unique identifier for the project
         self.name = name
         self.folder_path = folder_path
@@ -9,8 +9,8 @@ class Project:
         self.notification_message = notification_message
         self.payment_link = payment_link
         self.gpu_count = gpu_count
-        self.file_url = file_url
         self.price = price
-        self.progress = 0
+        self.progress = 0,
+        self.project_type = project_type
         self.tracking = True
         self.exported = False  # New attribute to track export status

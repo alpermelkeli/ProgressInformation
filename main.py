@@ -11,7 +11,9 @@ import os
 from utils.Export import export_project
 import requests
 
-from component.ScrollableLabelButtonFrame import ScrollableLabelButtonFrame
+from component.ScrollableLabelButtonFrameAnimation import ScrollableLabelButtonFrameAnimation
+from component.ScrollableLabelButtonFrameRender import ScrollableLabelButtonFrameRender
+
 
 from model.Project import Project
 
@@ -26,14 +28,18 @@ class ProjectTrackerApp:
 
         self.projects = []
 
-        self.projects_frame = ScrollableLabelButtonFrame(root, edit_command=self.edit_selected_project,
-                                                         export_command=self.export_selected_project, remove_command=self.remove_project,width=500,
-                                                         height=500)
+        # Create two scrollable frames: one for animation and one for render
+        self.animation_frame = ScrollableLabelButtonFrameAnimation(root, edit_command=self.edit_selected_project,
+                                                          export_command=self.export_selected_project,
+                                                          remove_command=self.remove_project, width=500, height=250)
 
-        self.projects_frame.pack(pady=10)
+        self.render_frame = ScrollableLabelButtonFrameRender(root, edit_command=self.edit_selected_project,
+                                                             remove_command=self.remove_project, width=500, height=250)
+
+        self.animation_frame.pack(pady=10)
+        self.render_frame.pack(pady=10)
 
         self.add_project_button = ctk.CTkButton(root, text="Yeni Proje Ekle", command=self.add_project)
-
         self.add_project_button.pack(pady=10)
 
     def add_project(self):
@@ -46,9 +52,14 @@ class ProjectTrackerApp:
         root_height = self.root.winfo_height()
 
         new_project_window.geometry(f"{root_width}x{root_height}+{root_x}+{root_y}")
-
         new_project_window.focus_set()
         new_project_window.grab_set()
+
+        # Animation or Render selection
+        ctk.CTkLabel(new_project_window, text="Proje Türü:").pack()
+        project_type_var = ctk.StringVar(value="Animation")
+        ctk.CTkRadioButton(new_project_window, text="Animation", variable=project_type_var, value="Animation").pack()
+        ctk.CTkRadioButton(new_project_window, text="Render", variable=project_type_var, value="Render").pack()
 
         ctk.CTkLabel(new_project_window, text="Proje İsmi:").pack()
         project_name_entry = ctk.CTkEntry(new_project_window)
@@ -82,11 +93,13 @@ class ProjectTrackerApp:
         price_entry.pack()
 
         add_button = ctk.CTkButton(new_project_window, text="Ekle",
-                                   command=lambda: self.save_project(new_project_window, project_name_entry,
-                                                                     folder_path_entry, total_files_entry,
-                                                                     notification_message_entry, payment_link_entry,
-                                                                     gpu_count_entry,price_entry))
+                                   command=lambda: self.save_project(
+                                       new_project_window, project_name_entry, folder_path_entry, total_files_entry,
+                                       notification_message_entry, payment_link_entry, gpu_count_entry, price_entry,
+                                       project_type_var.get()
+                                   ))
         add_button.pack(pady=10)
+
 
     @staticmethod
     def browse_folder(entry):
@@ -95,7 +108,8 @@ class ProjectTrackerApp:
             entry.delete(0, ctk.END)
             entry.insert(0, folder_path)
 
-    def save_project(self, window, name_entry, folder_entry, total_files_entry, message_entry, link_entry,gpu_count_entry,price_entry):
+    def save_project(self, window, name_entry, folder_entry, total_files_entry, message_entry, link_entry,
+                     gpu_count_entry, price_entry, project_type):
         name = name_entry.get()
         folder_path = folder_entry.get()
         total_files = int(total_files_entry.get())
@@ -103,17 +117,21 @@ class ProjectTrackerApp:
         payment_link = link_entry.get()
         gpu_count = gpu_count_entry.get()
         price = price_entry.get()
-        if name and folder_path and total_files and notification_message and payment_link:
-            new_project = Project(name, folder_path, total_files, notification_message, payment_link,gpu_count=gpu_count,price=price)
-            self.projects.append(new_project)
-            self.projects_frame.add_item(new_project.id, new_project.name)
 
-            threading.Thread(target=self.track_project, args=(new_project, self.projects_frame.update_progress)).start()
+        if name and folder_path and total_files and notification_message and payment_link:
+            new_project = Project(name, folder_path, total_files, notification_message, payment_link,
+                                  gpu_count=gpu_count, price=price, project_type=project_type)
+            self.projects.append(new_project)
+
+            # Add to the appropriate frame based on project type
+            target_frame = self.animation_frame if project_type == "Animation" else self.render_frame
+            target_frame.add_item(new_project.id, new_project.name)
+
+            threading.Thread(target=self.track_project, args=(new_project, target_frame.update_progress)).start()
 
             window.destroy()
         else:
             messagebox.showwarning("Eksik Bilgi", "Lütfen tüm alanları doldurun.")
-
     def edit_selected_project(self, project_id):
         selected_project = next((project for project in self.projects if project.id == project_id), None)
         if selected_project is None:
@@ -169,16 +187,13 @@ class ProjectTrackerApp:
         gpu_count_entry.pack()
 
         ctk.CTkLabel(edit_window, text="Dosya url'si:").pack()
-        file_url_entry = ctk.CTkEntry(edit_window)
-        file_url_entry.insert(0,selected_project.file_url)
-        file_url_entry.pack()
+
 
         save_button = ctk.CTkButton(edit_window, text="Kaydet",
                                     command=lambda: self.update_project(edit_window, selected_project,
                                                                         project_name_entry, folder_path_entry,
                                                                         total_files_entry, notification_message_entry,
-                                                                        payment_link_entry, gpu_count_entry,
-                                                                        file_url_entry, price_entry))
+                                                                        payment_link_entry, gpu_count_entry, price_entry))
         save_button.pack(pady=10)
 
     def export_selected_project(self, project_id):
@@ -237,14 +252,13 @@ class ProjectTrackerApp:
                                               True)
 
     def update_project(self, window, project, name_entry, folder_entry, total_files_entry, message_entry, link_entry, gpu_count_entry,
-                       file_url_entry,price_entry):
+                       price_entry):
         name = name_entry.get()
         folder_path = folder_entry.get()
         total_files = int(total_files_entry.get())
         notification_message = message_entry.get()
         payment_link = link_entry.get()
         gpu_count = gpu_count_entry.get()
-        file_url = file_url_entry.get()
         price = price_entry.get()
 
         if name and folder_path and total_files and notification_message and payment_link:
@@ -254,7 +268,6 @@ class ProjectTrackerApp:
             project.notification_message = notification_message
             project.payment_link = payment_link
             project.gpu_count = gpu_count
-            project.file_url = file_url
             project.price = price
 
             for id, label in zip(self.projects_frame.id_list, self.projects_frame.label_list):
@@ -275,9 +288,14 @@ class ProjectTrackerApp:
         # Stop tracking by setting the flag to False
         selected_project.tracking = False
 
-        # Remove the project from the list and UI
+        # Remove the project from the list
         self.projects.remove(selected_project)
-        self.projects_frame.remove_item(project_id)
+
+        # Determine which frame to remove the project from based on its type
+        if selected_project.project_type == "Animation":
+            self.animation_frame.remove_item(project_id)
+        else:
+            self.render_frame.remove_item(project_id)
 
         messagebox.showinfo("Bilgi", "Proje başarıyla silindi.")
 
@@ -293,7 +311,6 @@ class ProjectTrackerApp:
                     "message": project.notification_message,
                     "price": project.price,
                     "payment_link": project.payment_link,
-                    "file_url": project.file_url,
                     "gpu_count": project.gpu_count
                 }
                 print(data)
