@@ -1,10 +1,11 @@
 import customtkinter as ctk
 
 class ScrollableLabelButtonFrame(ctk.CTkScrollableFrame):
-    def __init__(self, master, command=None, **kwargs):
+    def __init__(self, master, edit_command=None,export_command = None, **kwargs):
         super().__init__(master, **kwargs)
         self.grid_columnconfigure(0, weight=1)
-        self.command = command
+        self.edit_command = edit_command
+        self.export_command = export_command
         self.label_list = []
         self.edit_button_list = []
         self.export_button_list = []
@@ -16,10 +17,11 @@ class ScrollableLabelButtonFrame(ctk.CTkScrollableFrame):
         edit_button = ctk.CTkButton(self, text="Düzenle", width=75, height=24)
         export_button = ctk.CTkButton(self, text="Birleştir", width=75, height=24)
 
-        if self.command is not None:
-            edit_button.configure(command=lambda: self.command(item))
-            # export_button için de bir command ekleyebilirsiniz.
-            # Örneğin: export_button.configure(command=lambda: self.export_command(item))
+        if self.edit_command is not None:
+            edit_button.configure(command=lambda: self.edit_command(item))
+
+        if self.export_command is not None:
+            export_button.configure(command=lambda :self.export_command(item))
 
         label.grid(row=len(self.label_list), column=0, pady=(0, 10), sticky="w")
         progress_label.grid(row=len(self.progress_list), column=1, pady=(0, 10), padx=5, sticky="w")

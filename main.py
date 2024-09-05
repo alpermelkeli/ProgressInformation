@@ -1,11 +1,14 @@
 import customtkinter as ctk
+
 from tkinter import filedialog, messagebox
+
 import threading
 
 import time
 
 import os
 
+from utils.Export import export_project
 import requests
 
 from component.ScrollableLabelButtonFrame import ScrollableLabelButtonFrame
@@ -23,7 +26,7 @@ class ProjectTrackerApp:
         self.projects = []
 
         # Mevcut projeler bölümü
-        self.projects_frame = ScrollableLabelButtonFrame(root, command=self.edit_selected_project, width=500, height=300)
+        self.projects_frame = ScrollableLabelButtonFrame(root, edit_command=self.edit_selected_project, export_command= self.export_selected_project,width=500, height=300)
 
         self.projects_frame.pack(pady=10)
 
@@ -157,7 +160,36 @@ class ProjectTrackerApp:
                                                                         total_files_entry, notification_message_entry,
                                                                         payment_link_entry))
         save_button.pack(pady=10)
+    def export_selected_project(self, project_name):
+        selected_project = next((project for project in self.projects if project.name == project_name), None)
+        if selected_project is None:
+            messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
+            return
 
+        export_window = ctk.CTkToplevel(self.root)
+        export_window.title("Projeyi Düzenle")
+
+        # Root penceresinin boyutlarını ve konumunu alın
+        root_x = self.root.winfo_x()
+        root_y = self.root.winfo_y()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+
+        # Edit window'u root'un üzerine yerleştirin
+        export_window.geometry(f"{root_width}x{root_height}+{root_x}+{root_y}")
+
+        # Pencereyi ön plana getir ve kullanıcıyı pencereyle etkileşime zorla
+        export_window.focus_set()
+        export_window.grab_set()
+
+        ctk.CTkLabel(export_window, text="fps:").pack()
+        fps_entry = ctk.CTkEntry(export_window)
+        fps_entry.insert(0, "0")
+        fps_entry.pack()
+
+
+        export_button = ctk.CTkButton(export_window, text="Kaydet",command= lambda: export_project(selected_project.folder_path,fps_entry.get()))
+        export_button.pack(pady=10)
     def update_project(self, window, project, name_entry, folder_entry, total_files_entry, message_entry, link_entry):
         name = name_entry.get()
         folder_path = folder_entry.get()
@@ -199,7 +231,7 @@ class ProjectTrackerApp:
 
             except Exception as e:
                 print(f"Hata: {e}")
-            time.sleep(60)
+            time.sleep(5)
 
 
 if __name__ == "__main__":
