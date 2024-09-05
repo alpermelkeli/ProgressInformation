@@ -96,7 +96,7 @@ class ProjectTrackerApp:
         if name and folder_path and total_files and notification_message and payment_link:
             new_project = Project(name, folder_path, total_files, notification_message, payment_link)
             self.projects.append(new_project)
-            self.projects_frame.add_item(name)
+            self.projects_frame.add_item(new_project.id, new_project.name)  # ID ile projeyi ekleyin
 
             threading.Thread(target=self.track_project, args=(new_project, self.projects_frame.update_progress)).start()
 
@@ -104,28 +104,25 @@ class ProjectTrackerApp:
         else:
             messagebox.showwarning("Eksik Bilgi", "Lütfen tüm alanları doldurun.")
 
-    def edit_selected_project(self, project_name):
-        selected_project = next((project for project in self.projects if project.name == project_name), None)
+    def edit_selected_project(self, project_id):
+        selected_project = next((project for project in self.projects if project.id == project_id), None)
         if selected_project is None:
             messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
             return
-
+        # Düzenleme işlemleri için pencere oluştur
         edit_window = ctk.CTkToplevel(self.root)
         edit_window.title("Projeyi Düzenle")
 
-        # Root penceresinin boyutlarını ve konumunu alın
+        # Pencere konumlandırma ve diğer işlemler
         root_x = self.root.winfo_x()
         root_y = self.root.winfo_y()
         root_width = self.root.winfo_width()
         root_height = self.root.winfo_height()
-
-        # Edit window'u root'un üzerine yerleştirin
         edit_window.geometry(f"{root_width}x{root_height}+{root_x}+{root_y}")
-
-        # Pencereyi ön plana getir ve kullanıcıyı pencereyle etkileşime zorla
         edit_window.focus_set()
         edit_window.grab_set()
 
+        # Mevcut proje bilgileri ile giriş alanları oluşturuluyor
         ctk.CTkLabel(edit_window, text="Proje İsmi:").pack()
         project_name_entry = ctk.CTkEntry(edit_window)
         project_name_entry.insert(0, selected_project.name)
@@ -160,8 +157,9 @@ class ProjectTrackerApp:
                                                                         total_files_entry, notification_message_entry,
                                                                         payment_link_entry))
         save_button.pack(pady=10)
-    def export_selected_project(self, project_name):
-        selected_project = next((project for project in self.projects if project.name == project_name), None)
+
+    def export_selected_project(self, project_id):
+        selected_project = next((project for project in self.projects if project.id == project_id), None)
         if selected_project is None:
             messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
             return
@@ -190,6 +188,7 @@ class ProjectTrackerApp:
 
         export_button = ctk.CTkButton(export_window, text="Kaydet",command= lambda: export_project(selected_project.folder_path,fps_entry.get()))
         export_button.pack(pady=10)
+
     def update_project(self, window, project, name_entry, folder_entry, total_files_entry, message_entry, link_entry):
         name = name_entry.get()
         folder_path = folder_entry.get()
@@ -198,19 +197,21 @@ class ProjectTrackerApp:
         payment_link = link_entry.get()
 
         if name and folder_path and total_files and notification_message and payment_link:
+            # Güncellenen proje bilgilerini güncelle
             project.name = name
             project.folder_path = folder_path
             project.total_files = total_files
             project.notification_message = notification_message
             project.payment_link = payment_link
 
-            self.projects_frame.remove_item(name)
-            self.projects_frame.add_item(name)
+            for id, label in zip(self.projects_frame.id_list,self.projects_frame.label_list):
+                if id == project.id:
+                    label.configure(text=name)
+                    break
 
             window.destroy()
         else:
             messagebox.showwarning("Eksik Bilgi", "Lütfen tüm alanları doldurun.")
-
     @staticmethod
     def track_project(project, update_progress_callback):
         while True:
@@ -226,8 +227,7 @@ class ProjectTrackerApp:
                 print(data)
                 requests.post(SERVER_URL, json=data)
 
-                # Progress'ı GUI üzerinde güncelle
-                update_progress_callback(project.name, project.progress)
+                update_progress_callback(project.id, project.progress)
 
             except Exception as e:
                 print(f"Hata: {e}")
