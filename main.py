@@ -17,18 +17,19 @@ from component.ScrollableLabelButtonFrameRender import ScrollableLabelButtonFram
 
 from model.Project import Project
 
-SERVER_URL = "http://example.com/post_data"
+SERVER_URL = "http://127.0.0.1:5000/post_data"
 
 
 class ProjectTrackerApp:
     def __init__(self, root):
+        self.dynamic_fields_frame = None
+
         self.root = root
 
         self.root.title("Project Tracker")
 
         self.projects = []
 
-        # Create two scrollable frames: one for animation and one for render
         self.animation_frame = ScrollableLabelButtonFrameAnimation(root, edit_command=self.edit_selected_project,
                                                           export_command=self.export_selected_project,
                                                           remove_command=self.remove_project, width=500, height=250)
@@ -51,15 +52,25 @@ class ProjectTrackerApp:
         root_width = self.root.winfo_width()
         root_height = self.root.winfo_height()
 
-        new_project_window.geometry(f"{root_width}x{root_height}+{root_x}+{root_y}")
+        new_project_window.geometry(f"{root_width}x{root_height+100}+{root_x}+{root_y}")
         new_project_window.focus_set()
         new_project_window.grab_set()
 
-        # Animation or Render selection
         ctk.CTkLabel(new_project_window, text="Proje Türü:").pack()
         project_type_var = ctk.StringVar(value="Animation")
-        ctk.CTkRadioButton(new_project_window, text="Animation", variable=project_type_var, value="Animation").pack()
-        ctk.CTkRadioButton(new_project_window, text="Render", variable=project_type_var, value="Render").pack()
+        ctk.CTkRadioButton(
+            new_project_window, height=50,text="Animation", variable=project_type_var, value="Animation",
+            command=lambda: self.update_project_fields(new_project_window, project_type_var.get())
+        ).pack()
+        ctk.CTkRadioButton(
+            new_project_window, height=50,text="Render", variable=project_type_var, value="Render",
+            command=lambda: self.update_project_fields(new_project_window, project_type_var.get())
+        ).pack()
+
+        self.dynamic_fields_frame = ctk.CTkFrame(new_project_window,height=250)
+        self.dynamic_fields_frame.pack(fill="both", expand=False)
+
+        self.update_project_fields(new_project_window, project_type_var.get())
 
         ctk.CTkLabel(new_project_window, text="Proje İsmi:").pack()
         project_name_entry = ctk.CTkEntry(new_project_window)
@@ -92,14 +103,34 @@ class ProjectTrackerApp:
         price_entry = ctk.CTkEntry(new_project_window)
         price_entry.pack()
 
-        add_button = ctk.CTkButton(new_project_window, text="Ekle",
-                                   command=lambda: self.save_project(
-                                       new_project_window, project_name_entry, folder_path_entry, total_files_entry,
-                                       notification_message_entry, payment_link_entry, gpu_count_entry, price_entry,
-                                       project_type_var.get()
-                                   ))
+        add_button = ctk.CTkButton(
+            new_project_window, text="Ekle",
+            command=lambda: self.save_project(
+                new_project_window, project_name_entry, folder_path_entry, total_files_entry,
+                notification_message_entry, payment_link_entry, gpu_count_entry, price_entry,
+                project_type_var.get(),self.resolution_entry,self.frame_count_entry
+            )
+        )
         add_button.pack(pady=10)
 
+    def update_project_fields(self, window, project_type):
+        for widget in self.dynamic_fields_frame.winfo_children():
+            widget.destroy()
+
+        if project_type == "Animation":
+
+            ctk.CTkLabel(self.dynamic_fields_frame, text="Çözünürlük:").pack()
+            self.resolution_entry = ctk.CTkOptionMenu(self.dynamic_fields_frame,values=["640x360", "1280x720", "1920x1080", "2560x1440", "3840x2160"])
+            self.resolution_entry.pack()
+
+            ctk.CTkLabel(self.dynamic_fields_frame, text="fps:").pack()
+            self.frame_count_entry = ctk.CTkOptionMenu(self.dynamic_fields_frame, values=["1", "25", "30", "60", "200"])
+            self.frame_count_entry.pack()
+        elif project_type == "Render":
+
+            ctk.CTkLabel(self.dynamic_fields_frame, text="Çözünürlük:").pack()
+            self.resolution_entry = ctk.CTkOptionMenu(self.dynamic_fields_frame,values=["640x360", "1280x720", "1920x1080", "2560x1440", "3840x2160"])
+            self.resolution_entry.pack()
 
     @staticmethod
     def browse_folder(entry):
@@ -109,7 +140,7 @@ class ProjectTrackerApp:
             entry.insert(0, folder_path)
 
     def save_project(self, window, name_entry, folder_entry, total_files_entry, message_entry, link_entry,
-                     gpu_count_entry, price_entry, project_type):
+                     gpu_count_entry, price_entry, project_type, resolution_entry,frame_count_entry):
         name = name_entry.get()
         folder_path = folder_entry.get()
         total_files = int(total_files_entry.get())
@@ -117,13 +148,14 @@ class ProjectTrackerApp:
         payment_link = link_entry.get()
         gpu_count = gpu_count_entry.get()
         price = price_entry.get()
+        resolution = resolution_entry.get()
+        fps = frame_count_entry.get()
 
         if name and folder_path and total_files and notification_message and payment_link:
             new_project = Project(name, folder_path, total_files, notification_message, payment_link,
-                                  gpu_count=gpu_count, price=price, project_type=project_type)
+                                  gpu_count=gpu_count, price=price, project_type=project_type, resolution=resolution,fps=fps)
             self.projects.append(new_project)
 
-            # Add to the appropriate frame based on project type
             target_frame = self.animation_frame if project_type == "Animation" else self.render_frame
             target_frame.add_item(new_project.id, new_project.name)
 
@@ -186,7 +218,6 @@ class ProjectTrackerApp:
         gpu_count_entry.insert(0,selected_project.gpu_count)
         gpu_count_entry.pack()
 
-        ctk.CTkLabel(edit_window, text="Dosya url'si:").pack()
 
 
         save_button = ctk.CTkButton(edit_window, text="Kaydet",
@@ -201,55 +232,16 @@ class ProjectTrackerApp:
         if selected_project is None:
             messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
             return
+        export_project(
+            selected_project,
+            self.update_export_status)
 
-        export_window = ctk.CTkToplevel(self.root)
-        export_window.title("Projeyi Export Et")
-
-        # Set window position and size
-        root_x = self.root.winfo_x()
-        root_y = self.root.winfo_y()
-        root_width = self.root.winfo_width()
-        root_height = self.root.winfo_height()
-        export_window.geometry(f"{root_width}x{root_height}+{root_x}+{root_y}")
-        export_window.focus_set()
-        export_window.grab_set()
-
-        # FPS Selection
-        ctk.CTkLabel(export_window, text="fps:").pack()
-        fps_option_menu = ctk.CTkOptionMenu(export_window, values=["1", "25", "30", "60", "200"])
-        fps_option_menu.pack()
-
-        # Output Name
-        ctk.CTkLabel(export_window, text="output adı:").pack()
-        output_name_entry = ctk.CTkEntry(export_window)
-        output_name_entry.insert(0, "output.mp4")
-        output_name_entry.pack()
-
-        # File Type
-        ctk.CTkLabel(export_window, text="dosya türü:").pack()
-        file_type_entry = ctk.CTkEntry(export_window)
-        file_type_entry.insert(0, "tga")
-        file_type_entry.pack()
-
-        # Resolution Selection
-        resolution_option_menu = ctk.CTkOptionMenu(export_window, values=["640x360", "1280x720", "1920x1080", "2560x1440", "3840x2160"])
-        resolution_option_menu.pack()
-
-        # Export Button with callback
-        export_button = ctk.CTkButton(export_window, text="Kaydet",
-                                      command=lambda: export_project(
-                                          selected_project, selected_project.folder_path, fps_option_menu.get(),
-                                          output_name_entry.get(), file_type_entry.get(), resolution_option_menu.get(),
-                                          self.update_export_status  # Pass the callback function
-                                      ))
-        export_button.pack(pady=10)
 
     def update_export_status(self, project_id):
         project = next((p for p in self.projects if p.id == project_id), None)
         if project:
             print(f"Project {project.name} marked as exported.")
-            self.projects_frame.update_export_status(project_id,
-                                              True)
+            self.animation_frame.update_export_status(project_id,True)
 
     def update_project(self, window, project, name_entry, folder_entry, total_files_entry, message_entry, link_entry, gpu_count_entry,
                        price_entry):
@@ -285,17 +277,16 @@ class ProjectTrackerApp:
             messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
             return
 
-        # Stop tracking by setting the flag to False
         selected_project.tracking = False
 
-        # Remove the project from the list
         self.projects.remove(selected_project)
 
-        # Determine which frame to remove the project from based on its type
         if selected_project.project_type == "Animation":
             self.animation_frame.remove_item(project_id)
         else:
             self.render_frame.remove_item(project_id)
+
+        #Flask üzerinden de silme isteği göndermeliyiz.
 
         messagebox.showinfo("Bilgi", "Proje başarıyla silindi.")
 
@@ -306,15 +297,19 @@ class ProjectTrackerApp:
                 current_files = len(os.listdir(project.folder_path))
                 project.progress = (current_files / project.total_files) * 100
                 data = {
+                    "project_id":project.id,
+                    "project_type":project.project_type,
                     "project_name": project.name,
                     "progress": project.progress,
                     "message": project.notification_message,
                     "price": project.price,
                     "payment_link": project.payment_link,
-                    "gpu_count": project.gpu_count
+                    "gpu_count": project.gpu_count,
+                    "framerate": project.fps,
+                    "resolution": project.resolution
                 }
                 print(data)
-                requests.post(SERVER_URL, json=data)
+                #requests.post(SERVER_URL, json=data)
 
                 update_progress_callback(project.id, project.progress)
 
@@ -324,8 +319,8 @@ class ProjectTrackerApp:
 
 
 if __name__ == "__main__":
-    ctk.set_appearance_mode("Dark")  # Temayı ayarla
-    ctk.set_default_color_theme("blue")  # Renk temasını ayarla
+    ctk.set_appearance_mode("Dark")
+    ctk.set_default_color_theme("blue")
     root = ctk.CTk()
     app = ProjectTrackerApp(root)
     root.mainloop()

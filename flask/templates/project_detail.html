@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details</title>
+    <style>
+        body {
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .progress-circle {
+            margin: 20px auto;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 10px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ project.logo }}" alt="Logo" style="max-width: 100px; margin-bottom: 10px;">
+        <div class="progress-circle">{{ project.progress }}%</div>
+        <h2>{{ project.name }}</h2>
+        <p>{{ project.description }}</p>
+        <p><strong>Proje adı:</strong> {{ project.project_name }}</p>
+        <p><strong>Ekran kartı sayısı:</strong> {{ project.gpu_count }}</p>
+        <p><strong>Çözünürlük:</strong> {{ project.resolution }} </p>
+        <p><strong>Fps:</strong> {{ project.framerate }} </p>
+        <p><strong>Fiyat:</strong> {{ project.price }} TL</p>
+        <div class="buttons">
+            <button class="button">Ödeme Yap</button>
+        </div>
+    </div>
+</body>
+</html>
