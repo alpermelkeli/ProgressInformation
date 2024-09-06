@@ -12,13 +12,14 @@ from utils.Export import export_project
 import requests
 
 from component.ScrollableLabelButtonFrameAnimation import ScrollableLabelButtonFrameAnimation
+
 from component.ScrollableLabelButtonFrameRender import ScrollableLabelButtonFrameRender
 
 
 from model.Project import Project
 
-SERVER_URL = "http://127.0.0.1:5000/post_data"
-
+ADD_PROJECT_URL = "http://127.0.0.1:5000/addProject"
+REMOVE_PROJECT_URL = "http://127.0.0.1:5000/removeProject"
 
 class ProjectTrackerApp:
     def __init__(self, root):
@@ -232,16 +233,23 @@ class ProjectTrackerApp:
         if selected_project is None:
             messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
             return
-        export_project(
-            selected_project,
-            self.update_export_status)
 
+        # Run export in a separate thread
+        threading.Thread(target=self.perform_export, args=(selected_project,)).start()
+
+    def perform_export(self, selected_project):
+        # Perform the export process in a separate thread
+        export_project(selected_project, self.update_export_status)
 
     def update_export_status(self, project_id):
+        # Update export status on the main thread
+        self.root.after(0, self._update_export_status, project_id)
+
+    def _update_export_status(self, project_id):
         project = next((p for p in self.projects if p.id == project_id), None)
         if project:
             print(f"Project {project.name} marked as exported.")
-            self.animation_frame.update_export_status(project_id,True)
+            self.animation_frame.update_export_status(project_id, True)
 
     def update_project(self, window, project, name_entry, folder_entry, total_files_entry, message_entry, link_entry, gpu_count_entry,
                        price_entry):
@@ -279,6 +287,8 @@ class ProjectTrackerApp:
 
         selected_project.tracking = False
 
+        data = {"project_id": selected_project.id}
+
         self.projects.remove(selected_project)
 
         if selected_project.project_type == "Animation":
@@ -286,9 +296,18 @@ class ProjectTrackerApp:
         else:
             self.render_frame.remove_item(project_id)
 
-        #Flask üzerinden de silme isteği göndermeliyiz.
+        try:
+            response = requests.post(REMOVE_PROJECT_URL, json=data)
+            response.raise_for_status()
 
-        messagebox.showinfo("Bilgi", "Proje başarıyla silindi.")
+            if response.status_code == 200:
+                messagebox.showinfo("Bilgi", "Proje başarıyla silindi.")
+            else:
+                error_message = response.json().get('error', 'Unknown error')
+                messagebox.showerror("Hata", f"Projeyi silerken hata oluştu: {error_message}")
+
+        except requests.RequestException as e:
+            messagebox.showerror("Hata", f"Sunucuya bağlanırken hata oluştu: {e}")
 
     @staticmethod
     def track_project(project, update_progress_callback):
@@ -309,7 +328,7 @@ class ProjectTrackerApp:
                     "resolution": project.resolution
                 }
                 print(data)
-                #requests.post(SERVER_URL, json=data)
+                requests.post(ADD_PROJECT_URL, json=data)
 
                 update_progress_callback(project.id, project.progress)
 
