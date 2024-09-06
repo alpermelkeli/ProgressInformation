@@ -22,7 +22,7 @@ class ScrollableLabelButtonFrameRender(ctk.CTkScrollableFrame):
         self.link_button_list = []
 
         self.header_label = ctk.CTkLabel(self, text="Render", font=("Arial", 16, "bold"), padx=5, pady=10)
-        self.header_label.grid(row=0, column=0, columnspan=6, pady=(0, 10), sticky="nsew")
+        self.header_label.grid(row=0, column=0, columnspan=6, pady=(0, 10), sticky="ew")
 
     def add_item(self, item_id, item_name, progress=0, image=None):
         row_index = len(self.label_list) + 1

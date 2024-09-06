@@ -4,18 +4,14 @@ import pyperclip
 class ScrollableLabelButtonFrameAnimation(ctk.CTkScrollableFrame):
     def __init__(self, master, edit_command=None, export_command=None, remove_command=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure(2, weight=1)
-        self.grid_columnconfigure(3, weight=1)
-        self.grid_columnconfigure(4, weight=1)
-        self.grid_columnconfigure(5, weight=1)
-        self.grid_columnconfigure(6, weight=1)
-        self.grid_columnconfigure(7, weight=1)
+        # Set equal weight to all columns to balance the layout
+        for i in range(8):
+            self.grid_columnconfigure(i, weight=1)
 
         self.edit_command = edit_command
         self.export_command = export_command
         self.remove_command = remove_command
+
         self.id_list = []
         self.label_list = []
         self.edit_button_list = []
@@ -26,8 +22,16 @@ class ScrollableLabelButtonFrameAnimation(ctk.CTkScrollableFrame):
         self.link_button_list = []
 
         # Centered header label
-        self.header_label = ctk.CTkLabel(self, text="Animation", font=("Arial", 16, "bold"), padx=5, pady=10)
-        self.header_label.grid(row=0, column=0, columnspan=7, pady=(0, 10), sticky="nsew")
+        self.header_label = ctk.CTkLabel(
+            self,
+            text="Animation",
+            font=("Arial", 16, "bold"),
+            padx=5,
+            pady=10,
+        )
+        # Adjust the columnspan to span all 8 columns and set sticky to center
+        self.header_label.grid(row=0, column=0, columnspan=8, pady=(0, 10), sticky="ew")
+
 
     def copy_to_clipboard(self, text):
         pyperclip.copy(text)

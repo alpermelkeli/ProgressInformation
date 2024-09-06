@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-# Proje verilerini saklayan sözlük
 projects = {}
 
 
@@ -35,12 +34,10 @@ def remove_project():
 
 @app.route('/project/<project_id>', methods=['GET'])
 def get_project_data(project_id):
-    # Proje verisini al
     project = projects.get(project_id)
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     print(projects)
-    # Proje verisini sayfada göster
     return render_template('project_detail.html', project=project)
 
 

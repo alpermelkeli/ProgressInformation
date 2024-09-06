@@ -33,10 +33,10 @@ class ProjectTrackerApp:
 
         self.animation_frame = ScrollableLabelButtonFrameAnimation(root, edit_command=self.edit_selected_project,
                                                           export_command=self.export_selected_project,
-                                                          remove_command=self.remove_project, width=500, height=250)
+                                                          remove_command=self.remove_project, width=750, height=250)
 
         self.render_frame = ScrollableLabelButtonFrameRender(root, edit_command=self.edit_selected_project,
-                                                             remove_command=self.remove_project, width=500, height=250)
+                                                             remove_command=self.remove_project, width=750, height=250)
 
         self.animation_frame.pack(pady=10)
         self.render_frame.pack(pady=10)
@@ -270,10 +270,17 @@ class ProjectTrackerApp:
             project.gpu_count = gpu_count
             project.price = price
 
-            for id, label in zip(self.projects_frame.id_list, self.projects_frame.label_list):
-                if id == project.id:
-                    label.configure(text=name)
-                    break
+            if project.project_type == "Animation":
+
+                for id, label in zip(self.animation_frame.id_list, self.animation_frame.label_list):
+                    if id == project.id:
+                        label.configure(text=name)
+                        break
+            else:
+                for id, label in zip(self.render_frame.id_list, self.render_frame.label_list):
+                    if id == project.id:
+                        label.configure(text=name)
+                        break
 
             window.destroy()
         else:
