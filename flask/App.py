@@ -6,6 +6,7 @@ socketio = SocketIO(app)
 
 projects = {}
 
+
 @app.route('/addProject', methods=['POST'])
 def add_project():
     data = request.json
@@ -23,6 +24,7 @@ def add_project():
 
     return jsonify({'message': 'Project data updated successfully'}), 200
 
+
 @app.route("/removeProject", methods=["POST"])
 def remove_project():
     data = request.json
@@ -34,12 +36,14 @@ def remove_project():
     else:
         return jsonify({'error': 'Project ID not found'}), 400
 
+
 @app.route('/project/<project_id>', methods=['GET'])
 def get_project_data(project_id):
     project = projects.get(project_id)
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     return render_template('project_detail.html', project_id=project_id)
+
 
 @socketio.on('join_project')
 def on_join(data):
@@ -48,10 +52,12 @@ def on_join(data):
     if project_id in projects:
         emit('project_update', projects[project_id], room=project_id)
 
+
 @socketio.on('leave_project')
 def on_leave(data):
     project_id = data.get('project_id')
     leave_room(project_id)
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

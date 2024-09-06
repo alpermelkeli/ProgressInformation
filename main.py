@@ -18,8 +18,8 @@ from component.ScrollableLabelButtonFrameRender import ScrollableLabelButtonFram
 
 from model.Project import Project
 
-ADD_PROJECT_URL = "http://127.0.0.1:5000/addProject"
-REMOVE_PROJECT_URL = "http://127.0.0.1:5000/removeProject"
+ADD_PROJECT_URL = "http://34.44.221.30:5000/addProject"
+REMOVE_PROJECT_URL = "http://34.44.221.30:5000/removeProject"
 
 class ProjectTrackerApp:
     def __init__(self, root):
@@ -125,7 +125,7 @@ class ProjectTrackerApp:
             self.resolution_entry.pack()
 
             ctk.CTkLabel(self.dynamic_fields_frame, text="fps:").pack()
-            self.frame_count_entry = ctk.CTkOptionMenu(self.dynamic_fields_frame, values=["1", "25", "30", "60", "200"])
+            self.frame_count_entry = ctk.CTkOptionMenu(self.dynamic_fields_frame, values=["25", "30", "60", "200"])
             self.frame_count_entry.pack()
         elif project_type == "Render":
 

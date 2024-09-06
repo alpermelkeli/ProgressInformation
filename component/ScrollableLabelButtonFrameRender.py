@@ -32,7 +32,7 @@ class ScrollableLabelButtonFrameRender(ctk.CTkScrollableFrame):
         edit_button = ctk.CTkButton(self, text="Düzenle", width=75, height=24)
         remove_button = ctk.CTkButton(self, text="Sil", width=75, height=24)
         link_button = ctk.CTkButton(self, text="Copy Link", width=75, height=24,
-                                    command=lambda: self.copy_to_clipboard(f"http://127.0.0.1:5000/project/{item_id}"))
+                                    command=lambda: self.copy_to_clipboard(f"http://34.44.221.30:5000/project/{item_id}"))
         if self.edit_command is not None:
             edit_button.configure(command=lambda: self.edit_command(item_id))
 
