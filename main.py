@@ -9,6 +9,8 @@ import time
 import os
 
 from utils.Export import export_project
+from utils.Upload import upload_project
+
 import requests
 
 from component.ScrollableLabelButtonFrameAnimation import ScrollableLabelButtonFrameAnimation
@@ -152,7 +154,7 @@ class ProjectTrackerApp:
         resolution = resolution_entry.get()
         fps = frame_count_entry.get()
 
-        if name and folder_path and total_files and notification_message and payment_link:
+        if name and folder_path and total_files and notification_message:
             new_project = Project(name, folder_path, total_files, notification_message, payment_link,
                                   gpu_count=gpu_count, price=price, project_type=project_type, resolution=resolution,fps=fps)
             self.projects.append(new_project)
@@ -228,11 +230,26 @@ class ProjectTrackerApp:
                                                                         payment_link_entry, gpu_count_entry, price_entry))
         save_button.pack(pady=10)
 
+    def upload_selected_project(self,project_id):
+        selected_project = next((project for project in self.projects if project.id == project_id), None)
+        if selected_project is None:
+            messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
+            return
+
+        selected_project.notification_message = "Upload ediliyor..."
+        threading.Thread(target=self.perform_upload, args=(selected_project,)).start()
+
+    def perform_upload(self, selected_project):
+        upload_project(selected_project)
+
+
     def export_selected_project(self, project_id):
         selected_project = next((project for project in self.projects if project.id == project_id), None)
         if selected_project is None:
             messagebox.showwarning("Hata", "Seçilen proje bulunamadı.")
             return
+
+        selected_project.notification_message = "Birleştiriliyor..."
 
         # Run export in a separate thread
         threading.Thread(target=self.perform_export, args=(selected_project,)).start()
@@ -261,7 +278,7 @@ class ProjectTrackerApp:
         gpu_count = gpu_count_entry.get()
         price = price_entry.get()
 
-        if name and folder_path and total_files and notification_message and payment_link:
+        if name and folder_path and total_files and notification_message:
             project.name = name
             project.folder_path = folder_path
             project.total_files = total_files

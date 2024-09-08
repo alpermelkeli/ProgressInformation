@@ -42,7 +42,7 @@ def get_project_data(project_id):
     project = projects.get(project_id)
     if not project:
         return jsonify({'error': 'Project not found'}), 404
-    return render_template('project_detail.html', project_id=project_id)
+    return render_template('project.html', project_id=project_id)
 
 
 @socketio.on('join_project')
